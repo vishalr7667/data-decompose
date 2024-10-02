@@ -745,5 +745,5 @@ def filter_columns_by_correlation(correlation_matrix, threshold=0.5):
 
     return positive_correlation_columns
 
-if _name_ == '__main__':
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
