@@ -1,0 +1,31 @@
+* {
+	padding: 0;
+	margin: 0;
+	box-sizing: border-box;
+}
+
+body,
+html {
+	height: 100%;
+	width: 100%;
+	/* overflow-x: hidden; */
+	background-color: #F2F2F2;
+}
+
+.footerProtoLink {
+	text-decoration: none;
+}
+
+.uploadBtnWrapper.col-md-1 {
+	margin-top: 30px;
+}
+
+p.footerTextWrapper {
+	vertical-align: middle;
+	margin-bottom: 0px !important;
+	font-size: medium;
+}
+
+.mb-101 {
+	margin-bottom: -108px;
+}

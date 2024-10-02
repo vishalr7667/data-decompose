@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Upload and Correlation Analysis</title>
+    <!-- Latest compiled and minified CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="../static/style.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-sm sticky-top bg-dark navbar-dark">
+      <div class="container">
+        <a class="navbar-brand" href="/templates/index.html"
+          ><img
+            src="/static/logo-website-projects-competition.webp"
+            alt="Logo"
+            style="width: 40px"
+            class="rounded-pill"
+        /></a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapsibleNavbar"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar">
+          <ul class="navbar-nav">
+            <li class="nav-item">
+              <a class="nav-link" href="#">Home</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="card p-4 mt-5 w-75 mx-auto">
+        <h5 class="text-center card-title">Upload CSV or Excel File</h5>
+        <div class="card-body">
+          <form action="/" method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+              <div class="row align-items-center mx-auto">
+                <div class="inputBoxWrapper col-md-11">
+                  <label class="form-label fw-bold" for="file">
+                    Upload File
+                  </label>
+                  <input
+                    type="file"
+                    class="form-control"
+                    id="file"
+                    name="file"
+                    required
+                  />
+                </div>
+                <div class="uploadBtnWrapper col-md-1">
+                  <button type="submit" class="btn btn-primary py-1 btn-sm">
+                    Upload
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="card w-75 mx-auto p-4 my-5">
+          {% if columns %}
+          <h5 class="text-center card-title">
+            Select Correlated Columns for Analysis
+          </h5>
+          <div class="card-body">
+            <form action="{{ url_for('select_variables') }}" method="POST">
+              <label for="" class="form-label fw-bold">Select Column</label>
+              {% for column in columns %}
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="columns"
+                  value="{{ column }}"
+                />
+                <label class="form-check-label">{{ column }} </label>
+              </div>
+              {% endfor %}
+
+              <label for="decomposition" class="form-label fw-bold mt-3"
+                >Select Decomposition Method</label
+              >
+              <select
+                name="decomposition"
+                id="decomposition"
+                class="form-select mb-3"
+                required
+                onchange="showParams()"
+              >
+                <option value="" disabled selected>Select a method</option>
+                <option value="wavelet_decomposition">
+                  Wavelet Decomposition
+                </option>
+                <option value="wavelet_packet_decomposition">
+                  Wavelet Packet Decomposition
+                </option>
+                <option value="emd">Empirical Mode Decomposition</option>
+                <option value="eemd">EEMD</option>
+                <option value="ceemd">CEEMD</option>
+                <option value="ceemdan">CEEMDAN</option>
+                <option value="variational_mode_decomposition">
+                  Variational Mode Decomposition
+                </option>
+              </select>
+
+              <!-- Dynamic Parameter Inputs -->
+              <div id="waveletParams" class="param-group" style="display: none">
+                <label for="wavelet" class="form-label">Wavelet Type</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="wavelet"
+                  placeholder="Enter wavelet type, e.g., 'db1'"
+                />
+                <label for="level" class="form-label">Level</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="level"
+                  placeholder="Enter decomposition level, e.g., 3"
+                />
+              </div>
+
+              <div
+                id="variationalModeParams"
+                class="param-group"
+                style="display: none"
+              >
+                <label for="alpha" class="form-label">Alpha</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="alpha"
+                  placeholder="Enter alpha value, e.g., 2000"
+                />
+                <label for="tau" class="form-label">Tau</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="tau"
+                  placeholder="Enter tau value, e.g., 0.0"
+                />
+                <label for="K" class="form-label">K (Number of Modes)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="K"
+                  placeholder="Enter number of modes, e.g., 3"
+                />
+                <label for="DC" class="form-label">DC</label>
+                <select name="DC" class="form-select">
+                  <option value="0">No</option>
+                  <option value="1">Yes</option>
+                </select>
+                <label for="init" class="form-label"
+                  >Initialization (Init)</label
+                >
+                <input
+                  type="number"
+                  class="form-control"
+                  name="init"
+                  placeholder="Enter initialization value, e.g., 1"
+                />
+                <!-- <label for="tol" class="form-label">Tolerance (Tol)</label>
+                <input
+                  type="number"
+                  step="any"
+                  class="form-control"
+                  name="tol"
+                  placeholder="Enter tolerance value, e.g., 1e-6"
+                /> -->
+              </div>
+
+              <button class="btn btn-primary py-1 mt-2 btn-sm" type="submit">
+                Submit
+              </button>
+            </form>
+            {% endif %}
+          </div>
+
+          <!-- Display any flash messages -->
+          {% with messages = get_flashed_messages() %} {% if messages %}
+          <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %} {% endwith %}
+        </div>
+      </div>
+    </div>
+
+    <footer class="bg-dark fixed-bottom text-light py-2">
+      <p class="text-center footerTextWrapper">
+        © Copyright
+        <a class="footerProtoLink text-light" href="https://protolabzit.com/">
+          Protolabz eServices
+        </a>
+        2015-2024. All Rights Reserved.
+      </p>
+    </footer>
+
+    <!-- JavaScript for Dynamic Parameter Fields -->
+    <script>
+      function showParams() {
+        var method = document.getElementById("decomposition").value;
+        document.querySelectorAll(".param-group").forEach(function (group) {
+          group.style.display = "none";
+        });
+
+        // Show parameters only for wavelet and variational mode decomposition
+        if (
+          method === "wavelet_decomposition" ||
+          method === "wavelet_packet_decomposition"
+        ) {
+          document.getElementById("waveletParams").style.display = "block";
+        } else if (method === "variational_mode_decomposition") {
+          document.getElementById("variationalModeParams").style.display =
+            "block";
+        }
+      }
+    </script>
+  </body>
+</html>
