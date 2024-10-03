@@ -282,7 +282,7 @@
         <a class="footerProtoLink text-light" href="https://protolabzit.com/">
           Protolabz eServices
         </a>
-        2015-2024. All Rights Reserved.
+        <span id="year"></span>. All Rights Reserved.
       </p>
     </footer>
 
@@ -296,6 +296,15 @@
         }, 2000);
       });
 
+      // Get the current year dynamically
+      const startYear = 2015;
+      const currentYear = new Date().getFullYear();
+
+      // Display the year range
+      const yearElement = document.getElementById("year");
+      yearElement.textContent =
+        startYear === currentYear ? startYear : `${startYear}-${currentYear}`;
+      
       function showParams() {
         var method = document.getElementById("decomposition").value;
         document.querySelectorAll(".param-group").forEach(function (group) {
