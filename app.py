@@ -81,7 +81,7 @@ def index():
                 session['filtered_columns'] = filtered_columns
                 session['datafile_path'] = filepath  # Save file path instead of dataframe
 
-                flash('File uploaded and analyzed. Highly correlated columns selected with threshold > 0.5. Contains only positive related columns.')
+                flash('File uploaded and analyzed. Highly correlated columns selected with threshold > 0.2. Contains only positive related columns.')
                 return redirect(url_for('index'))
 
             except pd.errors.EmptyDataError:
