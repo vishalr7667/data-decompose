@@ -322,6 +322,21 @@
             "block";
         }
       }
+
+      window.onload = function () {
+        // Send AJAX request to clear session on page load
+        $.ajax({
+          url: "/clear_session", // Flask route for clearing session
+          type: "POST",
+          success: function (response) {
+            console.log("Session cleared");
+            // Optional: perform any other actions after session is cleared
+          },
+          error: function (xhr, status, error) {
+            console.log("Error clearing session: " + error);
+          },
+        });
+      };
     </script>
   </body>
 </html>
