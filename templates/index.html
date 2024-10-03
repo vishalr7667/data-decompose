@@ -4,23 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Upload and Correlation Analysis</title>
+
     <!-- Latest compiled and minified CSS -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script
+      src="https://kit.fontawesome.com/1633fefde0.js"
+      crossorigin="anonymous"
+    ></script>
     <link rel="stylesheet" href="../static/style.css" />
   </head>
   <body>
+    <!-- Code for Navbar -->
     <nav class="navbar navbar-expand-sm sticky-top bg-dark navbar-dark">
       <div class="container">
         <a class="navbar-brand" href="/templates/index.html"
-          ><img
-            src="/static/logo-website-projects-competition.webp"
-            alt="Logo"
-            style="width: 40px"
-            class="rounded-pill"
+          ><img src="/static/Group-2347.png" alt="Logo" style="width: 350px"
         /></a>
         <button
           class="navbar-toggler"
@@ -41,37 +43,48 @@
     </nav>
 
     <div class="container">
-      <div class="card p-4 mt-5 w-75 mx-auto">
-        <h5 class="text-center card-title">Upload CSV or Excel File</h5>
-        <div class="card-body">
-          <form action="/" method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-              <div class="row align-items-center mx-auto">
-                <div class="inputBoxWrapper col-md-11">
-                  <label class="form-label fw-bold" for="file">
-                    Upload File
-                  </label>
-                  <input
-                    type="file"
-                    class="form-control"
-                    id="file"
-                    name="file"
-                    required
-                  />
-                </div>
-                <div class="uploadBtnWrapper col-md-1">
-                  <button type="submit" class="btn btn-primary py-1 btn-sm">
-                    Upload
-                  </button>
+      <div class="row">
+        <div class="card p-4 mt-5 mx-auto">
+          <h5 class="text-center card-title">Upload CSV or Excel File</h5>
+          <div class="card-body">
+            <form action="/" method="POST" enctype="multipart/form-data">
+              <div class="form-group">
+                <div class="row align-items-center mx-auto">
+                  <div class="inputBoxWrapper col-md-11">
+                    <label class="form-label fw-bold" for="file">
+                      Upload File
+                    </label>
+                    <input
+                      type="file"
+                      class="form-control"
+                      id="file"
+                      name="file"
+                      required
+                    />
+                  </div>
+                  <div class="uploadBtnWrapper col-md-1">
+                    <button type="submit" class="btn btn-primary py-1 btn-sm">
+                      Upload
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
 
       <div class="row">
-        <div class="card w-75 mx-auto p-4 my-5">
+        <div class="card mx-auto p-4 my-5">
+          <p class="text-danger">
+            <span class="bg-danger text-light rounded noteTxt me-2"
+              >Note :
+            </span>
+            Please upload the File above to start analyzation. This system will
+            select Highly correlated columns with threshold > 0.5. It will
+            contains only related columns.
+          </p>
+
           {% if columns %}
           <h5 class="text-center card-title">
             Select Correlated Columns for Analysis
@@ -109,9 +122,9 @@
                   Wavelet Packet Decomposition
                 </option>
                 <option value="emd">Empirical Mode Decomposition</option>
-                <option value="eemd">EEMD</option>
-                <option value="ceemd">CEEMD</option>
-                <option value="ceemdan">CEEMDAN</option>
+                <option value="emd">EEMD</option>
+                <option value="emd">CEEMD</option>
+                <option value="emd">CEEMDAN</option>
                 <option value="variational_mode_decomposition">
                   Variational Mode Decomposition
                 </option>
@@ -119,7 +132,20 @@
 
               <!-- Dynamic Parameter Inputs -->
               <div id="waveletParams" class="param-group" style="display: none">
-                <label for="wavelet" class="form-label">Wavelet Type</label>
+                <label for="wavelet" class="form-label"
+                  >Wavelet Type
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm py-0 p-1"
+                    data-bs-toggle="modal"
+                    data-bs-target="#myModal"
+                  >
+                    <i
+                      class="fa-solid fa-eye"
+                      style="vertical-align: middle"
+                    ></i>
+                  </button>
+                </label>
                 <input
                   type="text"
                   class="form-control"
@@ -147,7 +173,7 @@
                   name="alpha"
                   placeholder="Enter alpha value, e.g., 2000"
                 />
-                <label for="tau" class="form-label">Tau</label>
+                <label for="tau" class="form-label">Tau (0 - 1)</label>
                 <input
                   type="text"
                   class="form-control"
@@ -161,7 +187,7 @@
                   name="K"
                   placeholder="Enter number of modes, e.g., 3"
                 />
-                <label for="DC" class="form-label">DC</label>
+                <label for="DC" class="form-label">DC (Direct Current)</label>
                 <select name="DC" class="form-select">
                   <option value="0">No</option>
                   <option value="1">Yes</option>
@@ -192,9 +218,55 @@
             {% endif %}
           </div>
 
+          <!-- Wavelet type modal -->
+          <div class="modal" id="myModal">
+            <div class="modal-dialog modal-dialog-centered">
+              <div class="modal-content">
+                <!-- Modal Header -->
+                <div class="modal-header">
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                  ></button>
+                </div>
+
+                <!-- Modal body -->
+                <div class="modal-body">
+                  <p>
+                    Wavelet Type : Daubechies Wavelets (db) Examples: db1, db2,
+                    db3, ..., up to db45
+                  </p>
+                  <p>
+                    Symlets (sym) Examples: sym2, sym3, ..., up to sym20 Symlets
+                    are a modified version of Daubechies wavelets, designed to
+                    be more symmetric.
+                  </p>
+                  <p>
+                    Coiflets (coif) Examples: coif1, coif2, ..., up to coif5
+                    Coiflets are wavelets with vanishing moments for both the
+                    wavelet function and the scaling function, used for more
+                    precise decompositions.
+                  </p>
+                </div>
+
+                <!-- Modal footer -->
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    data-bs-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Display any flash messages -->
           {% with messages = get_flashed_messages() %} {% if messages %}
-          <ul>
+          <ul class="flashedMessage alert alert-primary">
             {% for message in messages %}
             <li>{{ message }}</li>
             {% endfor %}
@@ -215,7 +287,15 @@
     </footer>
 
     <!-- JavaScript for Dynamic Parameter Fields -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+
     <script>
+      $(document).ready(function () {
+        setTimeout(() => {
+          $(".flashedMessage").css("display", "none");
+        }, 2000);
+      });
+
       function showParams() {
         var method = document.getElementById("decomposition").value;
         document.querySelectorAll(".param-group").forEach(function (group) {
