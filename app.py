@@ -587,7 +587,7 @@ def perform_correlation(df):
 
     return correlation_matrix
 
-def filter_columns_by_correlation(correlation_matrix, threshold=0.5):
+def filter_columns_by_correlation(correlation_matrix, threshold=0.2):
     positive_correlation_columns = []
 
     for column in correlation_matrix.columns:
