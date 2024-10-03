@@ -20,6 +20,11 @@ html {
 	margin-top: 30px;
 }
 
+.noteTxt {
+	padding: 2px 8px 5px 10px;
+}
+
+
 p.footerTextWrapper {
 	vertical-align: middle;
 	margin-bottom: 0px !important;
