@@ -19,9 +19,9 @@
   </head>
   <body>
     <!-- Code for Navbar -->
-    <nav class="navbar navbar-expand-sm sticky-top bg-dark navbar-dark">
+    <nav class="navbar navbar-expand-sm fixed-top bg-dark navbar-dark">
       <div class="container">
-        <a class="navbar-brand" href="/templates/index.html"
+        <a class="navbar-brand" href="/"
           ><img src="/static/Group-2347.png" alt="Logo" style="width: 350px"
         /></a>
         <button
@@ -32,17 +32,11 @@
         >
           <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="collapsibleNavbar">
-          <ul class="navbar-nav">
-            <li class="nav-item">
-              <a class="nav-link" href="#">Home</a>
-            </li>
-          </ul>
-        </div>
+        <div class="collapse navbar-collapse" id="collapsibleNavbar"></div>
       </div>
     </nav>
 
-    <div class="container">
+    <div class="main container">
       <div class="row">
         <div class="card p-4 mt-5 mx-auto">
           <h5 class="text-center card-title">Upload CSV or Excel File</h5>
@@ -81,28 +75,85 @@
               >Note :
             </span>
             Please upload the File above to start analyzation. This system will
-            select Highly correlated columns with threshold > 0.5. It will
+            select Highly correlated columns with threshold > 0.2. It will
             contains only related columns.
           </p>
 
           {% if columns %}
-          <h5 class="text-center card-title">
+          <h5 class="ms-3 card-title">
             Select Correlated Columns for Analysis
           </h5>
           <div class="card-body">
             <form action="{{ url_for('select_variables') }}" method="POST">
-              <label for="" class="form-label fw-bold">Select Column</label>
-              {% for column in columns %}
-              <div class="form-check">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  name="columns"
-                  value="{{ column }}"
-                />
-                <label class="form-check-label">{{ column }} </label>
+              <div class="row">
+                <div class="col-md-7">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <label for="" class="fw-bold">Select Column</label>
+                      {% for column in columns %}
+                      <div class="form-check">
+                        <input
+                          class="form-check-input"
+                          type="radio"
+                          name="columns"
+                          id="column-{{loop.index}}"
+                          value="{{ column }}"
+                        />
+                        <label
+                          for="column-{{loop.index}}"
+                          class="form-check-label"
+                          >{{ column }}
+                        </label>
+                      </div>
+                      {% endfor %}
+                    </div>
+                    <div class="maxValueDiv col-md-6">
+                      <label for="" class="fw-bold">Selected Value</label>
+                      <ul class="maxValue">
+                        {% for max_value in max_included_value %}
+                        <li>{{max_value}}</li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <label for="" class="fw-bold">Excluded Column</label>
+                      {% for column in excluded_columns %}
+                      <li class="excludedColumn">{{column}}</li>
+                      {% endfor %}
+                    </div>
+                    <div class="col-md-4 text-end">
+                      <label for="" class="fw-bold">Exclded Value</label>
+                      {% for maxValue in max_excluded_value %}
+                      <li class="excludedValue text-end">
+                        {{ maxValue|rounding(10)}}
+                      </li>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
               </div>
-              {% endfor %}
+              <div class="row">
+                <div class="col-md-12">
+                  <label for="" class="fw-bold">Excluded Values</label>
+                  <ul class="row">
+                    {% for column, excluded_values in
+                    excluded_values_dict.items() %}
+                    <li class="col-sm-2 card">
+                      <strong>{{ column }}:</strong>
+                      <ul>
+                        {% for excluded_value in excluded_values %}
+                        <li>{{ excluded_value | rounding(10) }}</li>
+                        {% endfor %}
+                      </ul>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
 
               <label for="decomposition" class="form-label fw-bold mt-3"
                 >Select Decomposition Method</label
@@ -215,8 +266,9 @@
                 Submit
               </button>
             </form>
-            {% endif %}
           </div>
+
+          {% endif %}
 
           <!-- Wavelet type modal -->
           <div class="modal" id="myModal">
@@ -263,6 +315,7 @@
               </div>
             </div>
           </div>
+          <!-- \end{code} -->
 
           <!-- Display any flash messages -->
           {% with messages = get_flashed_messages() %} {% if messages %}
@@ -282,7 +335,7 @@
         <a class="footerProtoLink text-light" href="https://protolabzit.com/">
           Protolabz eServices
         </a>
-        2015-2024. All Rights Reserved.
+        <span id="year"></span>. All Rights Reserved.
       </p>
     </footer>
 
@@ -295,6 +348,15 @@
           $(".flashedMessage").css("display", "none");
         }, 2000);
       });
+
+      // Get the current year dynamically
+      const startYear = 2015;
+      const currentYear = new Date().getFullYear();
+
+      // Display the year range
+      const yearElement = document.getElementById("year");
+      yearElement.textContent =
+        startYear === currentYear ? startYear : `${startYear}-${currentYear}`;
 
       function showParams() {
         var method = document.getElementById("decomposition").value;
@@ -313,6 +375,20 @@
             "block";
         }
       }
+      // window.onload = function () {
+      //   // Send AJAX request to clear session on page load
+      //   $.ajax({
+      //     url: "/clear_session", // Flask route for clearing session
+      //     type: "POST",
+      //     success: function (response) {
+      //       console.log("Session cleared");
+      //       // Optional: perform any other actions after session is cleared
+      //     },
+      //     error: function (xhr, status, error) {
+      //       console.log("Error clearing session: " + error);
+      //     },
+      //   });
+      // };
     </script>
   </body>
 </html>
