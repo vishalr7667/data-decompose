@@ -368,7 +368,7 @@ def perform_correlation(df):
 
     return correlation_matrix
 
-def filter_columns_by_correlation(correlation_matrix, threshold=0.5):
+def filter_columns_by_correlation(correlation_matrix, threshold=0.2):
     included_columns = []  # To store columns that meet the threshold
     max_included_value = []  # To store max correlation values for included columns
     excluded_columns = []  # To store columns that don't meet the threshold (only column names)
