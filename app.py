@@ -369,7 +369,11 @@ def perform_correlation(df):
     return correlation_matrix
 
 def filter_columns_by_correlation(correlation_matrix, threshold=0.5):
-    positive_correlation_columns = []
+    included_columns = []  # To store columns that meet the threshold
+    max_included_value = []  # To store max correlation values for included columns
+    excluded_columns = []  # To store columns that don't meet the threshold (only column names)
+    excluded_max_value = []  # To store max correlation for excluded columns
+    excluded_values_dict = {}  # Dictionary to store excluded values per column
 
     for column in correlation_matrix.columns:
         # Find all positive correlations excluding self-correlation
