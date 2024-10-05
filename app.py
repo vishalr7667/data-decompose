@@ -419,7 +419,10 @@ def apply_min_max_normalization(df):
     scaler = MinMaxScaler()  # Initialize the scaler
     df[numerical_columns] = scaler.fit_transform(df[numerical_columns])  # Fit and transform the data
     return df
-
+    
+def smape(y_true, y_pred):
+    return 100 * np.mean(2 * np.abs(y_pred - y_true) / (np.abs(y_true) + np.abs(y_pred)))
+    
 @app.template_filter('rounding')
 def rounding(value, precision=2):
     return round(value, precision)
