@@ -32,15 +32,7 @@
         >
           <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="collapsibleNavbar"></div>
-
-        <div class="collapse navbar-collapse" id="collapsibleNavbar">
-          <ul class="navbar-nav">
-            
-          </ul>
-        </div>
-
       </div>
     </nav>
 
@@ -94,69 +86,32 @@
           <div class="card-body">
             <form action="{{ url_for('select_variables') }}" method="POST">
               <div class="row">
-                <div class="col-md-7">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <label for="" class="fw-bold">Select Column</label>
-                      {% for column in columns %}
-                      <div class="form-check">
-                        <input
-                          class="form-check-input"
-                          type="radio"
-                          name="columns"
-                          id="column-{{loop.index}}"
-                          value="{{ column }}"
-                        />
-                        <label
-                          for="column-{{loop.index}}"
-                          class="form-check-label"
-                          >{{ column }}
-                        </label>
-                      </div>
-                      {% endfor %}
-                    </div>
-                    <div class="maxValueDiv col-md-6">
-                      <label for="" class="fw-bold">Selected Value</label>
-                      <ul class="maxValue">
-                        {% for max_value in max_included_value %}
-                        <li>{{max_value}}</li>
-                        {% endfor %}
-                      </ul>
-                    </div>
+                <div class="col-md-4">
+                  <label for="" class="fw-bold">Select Column</label>
+                  {% for column in columns %}
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      name="columns"
+                      id="column-{{loop.index}}"
+                      value="{{ column }}"
+                    />
+                    <label for="column-{{loop.index}}" class="form-check-label"
+                      >{{ column }}
+                    </label>
                   </div>
+                  {% endfor %}
                 </div>
-                <div class="col-md-5">
-                  <div class="row">
-                    <div class="col-md-8">
-                      <label for="" class="fw-bold">Excluded Column</label>
-                      {% for column in excluded_columns %}
-                      <li class="excludedColumn">{{column}}</li>
-                      {% endfor %}
-                    </div>
-                    <div class="col-md-4 text-end">
-                      <label for="" class="fw-bold">Exclded Value</label>
-                      {% for maxValue in max_excluded_value %}
-                      <li class="excludedValue text-end">
-                        {{ maxValue|rounding(10)}}
-                      </li>
-                      {% endfor %}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-12">
-                  <label for="" class="fw-bold">Excluded Values</label>
-                  <ul class="row">
-                    {% for column, excluded_values in
-                    excluded_values_dict.items() %}
-                    <li class="col-sm-2 card">
-                      <strong>{{ column }}:</strong>
-                      <ul>
-                        {% for excluded_value in excluded_values %}
-                        <li>{{ excluded_value | rounding(10) }}</li>
-                        {% endfor %}
-                      </ul>
+                <div class="col-md-8">
+                  <label for="" class="fw-bold"
+                    >Correlation Results with
+                    "windmill_generated_power(kW/h)"</label
+                  >
+                  <ul>
+                    {% for column, value in correlation_data.items() %}
+                    <li class="my-1">
+                      <strong>{{ column }}</strong>: {{ value }}
                     </li>
                     {% endfor %}
                   </ul>
@@ -366,8 +321,6 @@
       yearElement.textContent =
         startYear === currentYear ? startYear : `${startYear}-${currentYear}`;
 
-
-
       function showParams() {
         var method = document.getElementById("decomposition").value;
         document.querySelectorAll(".param-group").forEach(function (group) {
@@ -385,22 +338,6 @@
             "block";
         }
       }
-
-      // window.onload = function () {
-      //   // Send AJAX request to clear session on page load
-      //   $.ajax({
-      //     url: "/clear_session", // Flask route for clearing session
-      //     type: "POST",
-      //     success: function (response) {
-      //       console.log("Session cleared");
-      //       // Optional: perform any other actions after session is cleared
-      //     },
-      //     error: function (xhr, status, error) {
-      //       console.log("Error clearing session: " + error);
-      //     },
-      //   });
-      // };
-
       window.onload = function () {
         // Send AJAX request to clear session on page load
         $.ajax({
@@ -415,7 +352,6 @@
           },
         });
       };
-
     </script>
   </body>
 </html>
