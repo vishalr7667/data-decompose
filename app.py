@@ -18,12 +18,14 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor, VotingRegressor
+from tensorflow.keras.models import Sequential # type: ignore
+from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense,Dropout # type: ignore
+from tensorflow.keras.callbacks import ReduceLROnPlateau #type: ignore
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
+# from tensorflow.keras.losses import MeanSquaredError
 from statsmodels.tsa.arima.model import ARIMA
 from sklearn.metrics import mean_squared_log_error
-# from tensorflow.keras.models import Sequential
-# from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -81,29 +83,32 @@ def index():
                 df_normalized = apply_min_max_normalization(df_cleaned)
                 # print('data frame after apply min max', df_normalized)
                 # Perform correlation analysis
-                correlation_matrix = perform_correlation(df_normalized)
+                correlation_results = perform_correlation(df_normalized, target_column='windmill_generated_power(kW/h)')
                 
                 if correlation_matrix.empty:
                     flash('No numerical columns for correlation analysis.')
                     return redirect(request.url)
                 
                 # Filter columns by positive correlation
-                filtered_columns,max_included_value,excluded_values_dict, excluded_columns,excluded_max_value = filter_columns_by_correlation(correlation_matrix)
+                # filtered_columns,max_included_value,excluded_values_dict, excluded_columns,excluded_max_value = filter_columns_by_correlation(correlation_matrix)
                 
-                print("exclude values",excluded_values_dict)
+                # print("exclude values",excluded_values_dict)
                 
-                # Check if there are filtered columns
-                if not filtered_columns:
-                    flash('No columns found with significant positive correlation.')
-                    return redirect(request.url)
+                # # Check if there are filtered columns
+                # if not filtered_columns:
+                #     flash('No columns found with significant positive correlation.')
+                #     return redirect(request.url)
 
-                session['filtered_columns'] = filtered_columns
-                session['max_included_value'] = max_included_value
-                session['excluded_values_dict'] = excluded_values_dict  # Updated key
-                session['excluded_columns'] = excluded_columns
-                session['max_excluded_value'] = excluded_max_value
+                # session['filtered_columns'] = filtered_columns
+                # session['max_included_value'] = max_included_value
+                # session['excluded_values_dict'] = excluded_values_dict  # Updated key
+                # session['excluded_columns'] = excluded_columns
+                # session['max_excluded_value'] = excluded_max_value
+                # session['datafile_path'] = filepath  # Save file path instead of dataframe
+                session['columns'] = df_cleaned.select_dtypes(include=['number']).columns.tolist()
+                session['correlation_results'] = correlation_results.to_dict()  # Convert to dictionary
+                
                 session['datafile_path'] = filepath  # Save file path instead of dataframe
-
                 flash('File uploaded and analyzed. Highly correlated columns selected with threshold > 0.2. Contains only positive related columns.')
                 return redirect(url_for('index'))
 
@@ -117,14 +122,10 @@ def index():
                 return redirect(request.url)
 
     # Only show filtered (positively correlated) columns
-    columns = session.get('filtered_columns', [])
-    max_included_value = session.get('max_included_value',[])
-    excluded_values_dict = session.get('excluded_values_dict', {})  # Use the same key
-    excluded_columns = session.get('excluded_columns',[])
-    max_excluded_value = session.get('max_excluded_value',[])
+    columns = session.get('columns',[])
+    correlation_data = session.get('correlation_results',{})
     
-    excluded_columns = session.get('excluded_columns',[])
-    return render_template('index.html', columns=columns,max_included_value=max_included_value, excluded_values_dict=excluded_values_dict, excluded_columns=excluded_columns, max_excluded_value = max_excluded_value)
+    return render_template('index.html', columns = columns, correlation_data = correlation_data)
 
 @app.route('/select_variables', methods=['POST'])
 def select_variables():
@@ -243,18 +244,13 @@ def decomposition():
 
 
 
-def perform_decomposition(data, method, wavelet_type=None, level=None, alpha=None, tau=None, K=None, DC=None, init=None,tol=None):
-    print('Data for selected column:', data)
-    print('Method selected:', method)
-    # tol = 1e-6
+def perform_decomposition(data, method, wavelet_type=None, level=None, alpha=None, tau=None, K=None, DC=None, init=None, tol=None):
+    
     tau = float(tau) if tau is not None else 0.0
     K = int(K) if K is not None else 3
     DC = int(DC) if DC is not None else 0
     init = int(init) if init is not None else 1
     tol = 1e-6
-    # Convert the data to a numpy array if it's not already
-    data = np.array(data)
-    
     # Ensure data is 1-dimensional
     if len(data.shape) > 1:
         data = data.flatten()
@@ -266,15 +262,17 @@ def perform_decomposition(data, method, wavelet_type=None, level=None, alpha=Non
 
     # Normalize the data (scaling between 0 and 1)
     data_min, data_max = np.min(data), np.max(data)
-    data_normalized = (data - data_min) / (data_max - data_min)
-    print('data Normalized',data_normalized)
+    if data_min == data_max:
+        data_normalized = np.zeros_like(data)
+    else:
+        data_normalized = (data - data_min) / (data_max - data_min)
+
     # Decompose the data based on the selected method
     if method == 'wavelet_decomposition':
         import pywt
         coeffs = pywt.wavedec(data_normalized, wavelet_type, level=level)
         decomposition_result = coeffs[0]  # Approximation coefficients
-        # decomposition_result = pywt.waverec(coeffs, wavelet_type)
-    
+
     elif method == 'wavelet_packet_decomposition':
         import pywt
         wp = pywt.WaveletPacket(data_normalized, wavelet_type, maxlevel=level)
@@ -285,53 +283,111 @@ def perform_decomposition(data, method, wavelet_type=None, level=None, alpha=Non
         emd = EMD()
         IMFs = emd.emd(data_normalized)
         decomposition_result = IMFs[0]  # First IMF
-
+        
     elif method == 'variational_mode_decomposition':
         import vmdpy
-        
         decomposition_result, _, _ = vmdpy.VMD(data_normalized, alpha=alpha, tau=tau, K=K, DC=DC, init=init, tol=tol)
         decomposition_result = decomposition_result[0]  # First decomposed mode
 
     else:
         raise ValueError("Unknown decomposition method")
 
-    # Prepare the data for prediction (split into training and testing)
+    # Prepare the data for CNN prediction (reshaping into 3D array for CNN)
     X = np.arange(len(decomposition_result)).reshape(-1, 1)  # Time steps
     y = decomposition_result  # The decomposed result as target
 
-    # Split data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Apply Linear Regression for prediction
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+    # Reshape the input data for CNN (samples, timesteps, features)
+    X_train_cnn = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+    X_test_cnn = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
 
-    # Make predictions
-    y_pred = model.predict(X_test)
-    # 1. Mean Absolute Error (MAE)
-    mae = mean_absolute_error(y_test, y_pred)
+    # Build a simple CNN for regression
+    # cnn_model = Sequential()
 
-    # 2. Root Mean Square Error (RMSE)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    # # Add convolutional layer
+    # cnn_model.add(Conv1D(filters=32, kernel_size=1, activation='relu', padding='same', input_shape=(X_train_cnn.shape[1], 1)))
 
-    smape_value = smape(y_test, y_pred)
-    print(f"Symmetric Mean Absolute Percentage Error (SMAPE): {smape_value}%")
+    # # Add max pooling layer
+    # cnn_model.add(MaxPooling1D(pool_size=1))
+
+    # # # Optionally, you can add more convolution and pooling layers for more complex patterns:
+    # # cnn_model.add(Conv1D(filters=64, kernel_size=1, activation='relu'))
+    # # cnn_model.add(MaxPooling1D(pool_size=2))
+
+    # # Flatten the output
+    # cnn_model.add(Flatten())
+
+    # # Add fully connected layers for regression
+    # cnn_model.add(Dense(100, activation='relu'))
+    # cnn_model.add(Dense(1))  # Output layer for regression (one continuous output)
+
+    # # Compile the model
+    # cnn_model.compile(optimizer='adam', loss='mean_squared_error')
+
+    # # Train the CNN model
+    # cnn_model.fit(X_train_cnn, y_train, validation_data=(X_test_cnn, y_test), epochs=20, batch_size=32, verbose=1)
+
+    # Build a revised CNN for regression
+    cnn_model = Sequential()
+
+    # Convolutional layers
+    cnn_model.add(Conv1D(filters=64, kernel_size=3, activation='relu', padding='same', input_shape=(X_train_cnn.shape[1], 1)))
+    if X_train_cnn.shape[1] > 1:
+        cnn_model.add(MaxPooling1D(pool_size=2))  # Only use pooling if time_steps > 1
+    else:
+        print("Warning: Not enough time steps for pooling. Skipping MaxPooling1D.")
+    cnn_model.add(Dropout(0.5))
+
+    cnn_model.add(Conv1D(filters=128, kernel_size=3, activation='relu', padding='same'))
+    if X_train_cnn.shape[1] > 1:
+        cnn_model.add(MaxPooling1D(pool_size=2))  # Only use pooling if time_steps > 1
+    else:
+        print("Warning: Not enough time steps for pooling. Skipping MaxPooling1D.")
+    cnn_model.add(Dropout(0.5))
+
+    # Flatten the output
+    cnn_model.add(Flatten())
+
+    # Fully connected layers
+    cnn_model.add(Dense(100, activation='relu'))
+    cnn_model.add(Dense(1))  # Output layer for regression
+
+    # Compile the model
+    cnn_model.compile(optimizer='adam', loss='mean_squared_error')
+
     
-    # # Calculate MSLE
-    # msle = mean_squared_log_error(y_test, y_pred)
-    # print(f"Mean Squared Logarithmic Error (MSLE): {msle}")
-    # Calculate the error (MSE)
-    mse = mean_squared_error(y_test, y_pred)
+    # Define the learning rate reduction callback
+    lr_reduction = ReduceLROnPlateau(
+        monitor='val_loss',    # Monitor the validation loss
+        factor=0.5,            # Reduce the learning rate by 50%
+        patience=5,            # Wait for 5 epochs before reducing the learning rate
+        min_lr=1e-6            # Set a minimum learning rate
+    )
     
-    # Plot the original data vs the prediction
+    # Train the model with callbacks
+    cnn_model.fit(X_train_cnn, y_train, validation_data=(X_test_cnn, y_test), epochs=20, batch_size=32, verbose=1, callbacks=[lr_reduction])
+    
+    # Make predictions using CNN
+    y_pred_cnn = cnn_model.predict(X_test_cnn)
+
+    # Calculate evaluation metrics
+    mae_cnn = mean_absolute_error(y_test, y_pred_cnn)
+    rmse_cnn = np.sqrt(mean_squared_error(y_test, y_pred_cnn))
+    epsilon = 1e-10
+    mape_cnn = np.mean(np.abs((y_test - y_pred_cnn.flatten()) / (y_test + epsilon))) * 100
+    mse = mean_squared_error(y_test, y_pred_cnn)
+
+    # Plot the original data vs CNN prediction
     plt.figure(figsize=(10, 6))
     plt.plot(X_test, y_test, label='True Data', marker='o')
-    plt.plot(X_test, y_pred, label='Predicted Data', linestyle='--', marker='x')
-    plt.title(f'Prediction after {method.capitalize()} (MSE: {mse:.4f})')
+    plt.plot(X_test, y_pred_cnn, label='CNN Predicted Data', linestyle='--', marker='x')
+    plt.title(f'CNN Prediction after {method.capitalize()}')
     plt.xlabel('Time Step')
     plt.ylabel('Value')
     plt.legend()
     plt.grid(True)
+    plt.tight_layout()
 
     # Save the plot to a BytesIO object and encode it in base64
     buf = BytesIO()
@@ -339,15 +395,15 @@ def perform_decomposition(data, method, wavelet_type=None, level=None, alpha=Non
     buf.seek(0)
     plot_url = base64.b64encode(buf.getvalue()).decode('utf8')
     plt.close()
-    
-    metrics_result = f"""
-    MSE(Mean Squared Error) of prediction: {mse:.4f}
-    MAE(Mean Absolute Error): {mae:.4f}
-    RMSE(Root Mean Square Error): {rmse:.4f}
+
+    # Return evaluation metrics and the plot
+    metrics_result_cnn = f"""
+    CNN MAE: {mae_cnn:.4f}
+    CNN RMSE: {rmse_cnn:.4f}
+    CNN MSE: {mse:.4f}
     """
 
-    # Return the theoretical result (e.g., model accuracy) and the plot in base64
-    return metrics_result, f"data:image/png;base64,{plot_url}"
+    return metrics_result_cnn, f"data:image/png;base64,{plot_url}"
 
 
 
@@ -356,17 +412,25 @@ def preprocess_data(df):
     df_cleaned = df.dropna()  # Simple method, you can expand this
     return df_cleaned
 
-def perform_correlation(df):
+def perform_correlation(df, target_column='windmill_generated_power(kW/h)'):
+    print("Data passed to perform_correlation (df):")
+    print(df.head())  # Print the data passed to the function to verify it's normalized
+    # Select numeric columns
     numerical_columns = df.select_dtypes(include=['number']).columns
-    if numerical_columns.empty:
-        flash("No numerical columns available for correlation analysis.")
+
+    # Ensure that the target column exists in the dataframe
+    if target_column not in numerical_columns:
+        flash(f"Target column {target_column} not found in the dataset.")
         return pd.DataFrame()
 
+    # Calculate the correlation matrix
     correlation_matrix = df[numerical_columns].corr(method='pearson')
-    
-    print("Correlation Matrix" , correlation_matrix)
 
-    return correlation_matrix
+    # Get correlations for the target column with all other numeric columns
+    correlation_with_target = correlation_matrix[target_column].drop(target_column)  # Exclude self-correlation
+
+    # Return a dictionary of correlation values for the target column
+    return correlation_with_target.sort_values(ascending=False)
 
 def filter_columns_by_correlation(correlation_matrix, threshold=0.2):
     included_columns = []  # To store columns that meet the threshold
